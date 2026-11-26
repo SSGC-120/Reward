@@ -392,7 +392,7 @@
 </div>
 
 <!-- Main Action Button (Switches from Disabled Redeem -> Fortune Mystery Box -> Redeem) -->
-<button id="main-action-btn" class="action-btn" disabled>Redeem 兌換</button>
+<button id="main-action-btn" class="action-btn" disabled>Fortune Mystery Box 幸運盲盒</button>
 
 <!-- Mystery Box Modal -->
 <div id="mystery-modal" class="modal-overlay">
@@ -929,7 +929,7 @@ if (count >= TARGET_STAMPS) {
   } else {
     congratsBanner.style.display = 'none';
     mainActionBtn.disabled = true;
-    mainActionBtn.innerText = "Redeem 兌換";
+    mainActionBtn.innerText = "Fortune Mystery Box 幸運盲盒";
     mainActionBtn.classList.remove('mystery-ready');
 
     // Re-enable and restore blue color on Scan button
