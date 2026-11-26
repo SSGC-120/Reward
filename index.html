@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SSGC 120th Anniversary Open Day Stamp Card</title>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<style>
+  :root {
+    --pale-blue: #e6f2ff;
+    --gold: #ffd700;
+    --dark-blue: #003366;
+  }
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--pale-blue);
+    color: var(--dark-blue);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 15px;
+    max-width: 600px;
+  }
+  .school-badge {
+    width: 80px;
+    height: auto;
+    object-fit: contain;
+    margin-bottom: 10px;
+  }
+  h1 {
+    font-size: 19px;
+    margin: 4px 0;
+    line-height: 1.3;
+  }
+  sup {
+    font-size: 0.6em;
+  }
+  .progress-counter {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--dark-blue);
+    margin: 5px 0 15px 0;
+    background: #ffffff;
+    padding: 8px 18px;
+    border-radius: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .grid-container {
+    display: grid;
+    grid-template-columns: repeat(9, 35px);
+    grid-template-rows: repeat(5, 35px);
+    gap: 0;
+    margin-top: 10px;
+    justify-content: center;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));
+  }
+  @media (min-width: 400px) {
+    .grid-container {
+      grid-template-columns: repeat(9, 44px);
+      grid-template-rows: repeat(5, 44px);
+    }
+  }
+  @media (min-width: 600px) {
+    .grid-container {
+      grid-template-columns: repeat(9, 55px);
+      grid-template-rows: repeat(5, 55px);
+    }
+  }
+  .stamp-box {
+    background: var(--dark-blue);
+    border: 1px solid var(--pale-blue);
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    font-size: 18px;
+  }
+  @media (min-width: 400px) { .stamp-box { font-size: 24px; } }
+  @media (min-width: 600px) { .stamp-box { font-size: 32px; } }
+  .stamp-box.unlocked {
+    background: linear-gradient(135deg, #ffe875, var(--gold));
+    box-shadow: inset 0 0 8px rgba(255, 120, 0, 0.4);
+    color: #000;
+  }
+  .congratulations {
+    background: #d4edda;
+    color: #155724;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    text-align: center;
+    font-weight: bold;
+    display: none;
+    max-width: 420px;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #c3e6cb;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .action-btn {
+    margin-top: 25px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 12px 32px;
+    font-size: 16px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: background-color 0.3s, transform 0.2s;
+  }
+  .action-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    opacity: 0.7;
+    box-shadow: none;
+  }
+  .action-btn:not(:disabled) {
+    background-color: #28a745;
+  }
+  .action-btn.mystery-ready {
+    background: linear-gradient(135deg, #1a365d, #2b6cb0);
+    border: 2px solid #f6ad55;
+    color: #fff;
+  }
+
+  /* Modal Styles */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.65);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    box-sizing: border-box;
+  }
+  .modal-box {
+    background-color: white;
+    padding: 25px;
+    border-radius: 16px;
+    text-align: center;
+    max-width: 340px;
+    width: 100%;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    position: relative;
+  }
+  .modal-text {
+    margin-bottom: 20px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--dark-blue);
+  }
+  .modal-buttons {
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+  }
+  .btn-cancel, .btn-confirm {
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+  }
+  .btn-cancel { background-color: #6c757d; }
+  .btn-confirm { background-color: #dc3545; }
+
+  /* Mystery Box Specific Styles (Responsive for Mobile) */
+  .mystery-modal-box {
+    max-width: 380px;
+    background: #f0f2f5;
+    border: 3px solid #f6ad55;
+  }
+  .box-title {
+    color: #2b6cb0;
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+  .box-subtitle {
+    color: #4a5568;
+    font-size: 13px;
+    margin-bottom: 15px;
+  }
+  .box-container {
+    margin: 15px auto;
+    width: 240px;
+    height: 240px;
+    cursor: pointer;
+    position: relative;
+  }
+  .box {
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, #ffffff 0%, #1a365d 80%, #0d2040 100%);
+    border: 4px solid #f6ad55;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 20px rgba(13, 32, 64, 0.4);
+    transition: transform 0.3s, box-shadow 0.3s;
+    position: relative;
+    z-index: 2;
+    overflow: hidden;
+    padding: 12px;
+    box-sizing: border-box;
+  }
+  .box:hover {
+    transform: scale(1.03);
+  }
+  .box-logo {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 10px;
+    pointer-events: none;
+  }
+  .prize-popup {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    width: 210px;
+    z-index: 10;
+    pointer-events: none;
+    opacity: 0;
+    transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: #ffffff;
+    padding: 12px;
+    border-radius: 14px;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.35);
+    border: 3px solid #f6ad55;
+  }
+  .prize-popup.active {
+    transform: translate(-50%, -50%) scale(1.05);
+    opacity: 1;
+  }
+  .prize-popup img {
+    max-width: 100%;
+    max-height: 170px;
+    height: auto;
+    border-radius: 8px;
+    display: block;
+    margin: 0 auto;
+    object-fit: contain;
+  }
+  @keyframes shake {
+    0% { transform: translate(2px, 2px) rotate(0deg); }
+    10% { transform: translate(-3px, -2px) rotate(-3deg); }
+    20% { transform: translate(-4px, 0px) rotate(3deg); }
+    30% { transform: translate(3px, 3px) rotate(0deg); }
+    40% { transform: translate(2px, -2px) rotate(3deg); }
+    50% { transform: translate(-2px, 3px) rotate(-3deg); }
+    60% { transform: translate(-4px, 2px) rotate(0deg); }
+    70% { transform: translate(3px, 2px) rotate(-3deg); }
+    80% { transform: translate(-2px, -2px) rotate(3deg); }
+    90% { transform: translate(3px, 3px) rotate(0deg); }
+    100% { transform: translate(2px, -2px) rotate(0deg); }
+  }
+  .shaking {
+    animation: shake 0.25s infinite;
+    pointer-events: none;
+  }
+  #mystery-result {
+    margin-top: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #e53e3e;
+    min-height: 28px;
+  }
+
+  /* Combo Bonus Styles */
+  .bonus-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 25px;
+    margin-top: 25px;
+    padding-bottom: 20px;
+    width: 100%;
+  }
+  .bonus-img {
+    width: 80px;
+    height: auto;
+    object-fit: contain;
+    display: none;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+  .bonus-img:active { transform: scale(0.9); }
+  @keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @media (max-width: 600px) {
+    .bonus-img { width: 65px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <img class="school-badge" src="badge.png" alt="St. Stephen's Girls' College Badge" onerror="this.style.display='none'">
+  <h1>St. Stephen's Girls' College</h1>
+  <h1>120<sup>th</sup> Anniversary Open Day</h1>
+  <h1>聖士提反女子中學</h1>
+  <h1>一百二十周年校慶開放日</h1>
+  <p style="font-size: 15px; margin: 12px 0 3px 0; font-weight: bold; color: #003366;">Digital Reward Card 電子印花收集卡</p>
+</div>
+
+<div class="progress-counter" id="progress-text">
+  Stamps Collected 印花進度: 0 / 28
+</div>
+
+<p style="font-size: 13px; color: #dc3545; font-weight: bold; margin: 10px 0 0 0; text-align: center;">
+  ! Please use this button for all scans. Do not use your phone camera.<br>
+  請使用此按鈕掃描，切勿使用手機相機。
+</p>
+
+<button id="start-scan-btn" class="action-btn" style="background-color: #0056b3; margin: 5px 0 10px 0; width: 100%; max-width: 300px;">
+  Scan 掃描
+</button>
+
+<!-- Scanner Modal -->
+<div id="scanner-modal" class="modal-overlay">
+  <div class="modal-box" style="width: 90%; max-width: 400px; padding: 15px;">
+    <h3 style="margin-top: 0; color: var(--dark-blue);">Scan / 掃描</h3>
+    <div id="reader" style="width: 100%;"></div>
+    <button id="close-scanner" class="btn-cancel" style="margin-top: 15px; width: 100%;">Close / 關閉</button>
+  </div>
+</div>
+
+<div id="congrats-banner" class="congratulations">
+  Congratulations! You have collected 28 stamps! Please proceed to Rooms M009/M010 in the June Li Building to redeem your souvenirs.<br><br>
+  恭喜您！您已集齊28枚印花！請前往李余愛喜大樓 M009/M010室領取紀念品。
+</div>
+
+<div class="grid-container">
+  <!-- Digit "1" -->
+  <div class="stamp-box empty" style="grid-area: 1/1/2/2;"></div>
+  <div class="stamp-box empty" style="grid-area: 2/1/3/2;"></div>
+  <div class="stamp-box empty" style="grid-area: 3/1/4/2;"></div>
+  <div class="stamp-box empty" style="grid-area: 4/1/5/2;"></div>
+  <div class="stamp-box empty" style="grid-area: 5/1/6/2;"></div>
+  <!-- Digit "2" -->
+  <div class="stamp-box empty" style="grid-area: 1/3/2/4;"></div>
+  <div class="stamp-box empty" style="grid-area: 1/4/2/5;"></div>
+  <div class="stamp-box empty" style="grid-area: 1/5/2/6;"></div>
+  <div class="stamp-box empty" style="grid-area: 2/5/3/6;"></div>
+  <div class="stamp-box empty" style="grid-area: 3/5/4/6;"></div>
+  <div class="stamp-box empty" style="grid-area: 3/4/4/5;"></div>
+  <div class="stamp-box empty" style="grid-area: 3/3/4/4;"></div>
+  <div class="stamp-box empty" style="grid-area: 4/3/5/4;"></div>
+  <div class="stamp-box empty" style="grid-area: 5/3/6/4;"></div>
+  <div class="stamp-box empty" style="grid-area: 5/4/6/5;"></div>
+  <div class="stamp-box empty" style="grid-area: 5/5/6/6;"></div>
+  <!-- Digit "0" -->
+  <div class="stamp-box empty" style="grid-area: 1/7/2/8;"></div>
+  <div class="stamp-box empty" style="grid-area: 1/8/2/9;"></div>
+  <div class="stamp-box empty" style="grid-area: 1/9/2/10;"></div>
+  <div class="stamp-box empty" style="grid-area: 2/7/3/8;"></div>
+  <div class="stamp-box empty" style="grid-area: 2/9/3/10;"></div>
+  <div class="stamp-box empty" style="grid-area: 3/7/4/8;"></div>
+  <div class="stamp-box empty" style="grid-area: 3/9/4/10;"></div>
+  <div class="stamp-box empty" style="grid-area: 4/7/5/8;"></div>
+  <div class="stamp-box empty" style="grid-area: 4/9/5/10;"></div>
+  <div class="stamp-box empty" style="grid-area: 5/7/6/8;"></div>
+  <div class="stamp-box empty" style="grid-area: 5/8/6/9;"></div>
+  <div class="stamp-box empty" style="grid-area: 5/9/6/10;"></div>
+</div>
+
+<!-- Main Action Button (Switches from Disabled Redeem -> Fortune Mystery Box -> Redeem) -->
+<button id="main-action-btn" class="action-btn" disabled>Redeem 兌換</button>
+
+<!-- Mystery Box Modal -->
+<div id="mystery-modal" class="modal-overlay">
+  <div class="modal-box mystery-modal-box">
+    <div class="box-title">幸運盲盒 Fortune Mystery Box</div>
+    <div class="box-subtitle" id="mystery-subtitle">點擊盲盒開啟 (限抽一次)<br>Tap the box to open (One-time draw only)</div>
+
+    <div class="box-container" id="boxContainer" onclick="openBox()">
+      <div class="box" id="blindBox">
+        <img src="120%20logo.png" alt="120 Logo" class="box-logo">
+      </div>
+      <div class="prize-popup" id="prizePopup">
+        <img id="popupImg" src="" alt="Prize Graphic">
+      </div>
+    </div>
+
+    <div id="mystery-result"></div>
+
+    <!-- Appears ONLY after the box has been shaken and opened -->
+    <button id="mystery-redeem-btn" class="action-btn" style="display: none; width: 100%; margin-top: 15px;">
+      Redeem 兌換
+    </button>
+    <button id="close-mystery-btn" class="btn-cancel" style="width: 100%; margin-top: 10px;">
+      Close / 關閉
+    </button>
+  </div>
+</div>
+
+<!-- Final Redemption Confirmation Modal -->
+<div id="confirm-modal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-text">
+      Please confirm with staff in <strong>Rooms M009 / M010</strong>.<br>
+      I confirm that I have redeemed the souvenir and agree to reset the reward card.<br><br>
+      請於 <strong>M009 / M010 室</strong>由工作人員確認。<br>
+      本人確認已兌換紀念品，並同意重設此印花收集卡。
+    </div>
+    <div class="modal-buttons">
+      <button id="modal-cancel" class="btn-cancel">Cancel / 取消</button>
+      <button id="modal-confirm" class="btn-confirm">Confirm / 確認</button>
+    </div>
+  </div>
+</div>
+
+<!-- Combo Redemption Modal -->
+<div id="combo-modal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-text">I confirm that I have redeemed this souvenir.<br><br>我確認已兌換此紀念品。</div>
+    <div class="modal-buttons">
+      <button id="combo-cancel" class="btn-cancel">Cancel / 取消</button>
+      <button id="combo-confirm" class="btn-confirm">Confirm / 確認</button>
+    </div>
+  </div>
+</div>
+
+<!-- Combo Bonus Images -->
+<div class="bonus-container">
+  <img id="arc-combo-img" class="bonus-img" src="arc.png" alt="Archives Bonus">
+  <img id="chi-combo-img" class="bonus-img" src="chi.png" alt="Chinese Bonus">
+  <img id="hist-combo-img" class="bonus-img" src="hist.png" alt="HisCivic Bonus">
+  <img id="mcne-combo-img" class="bonus-img" src="mcne.png" alt="CHisMCN Bonus">
+  <img id="eng-combo-img" class="bonus-img" src="eng.png" alt="Eng Bonus">
+  <img id="mus-combo-img" class="bonus-img" src="mus.png" alt="Music Bonus">
+  <img id="re-combo-img" class="bonus-img" src="RE.png" alt="RE Bonus">
+  <img id="econ-combo-img" class="bonus-img" src="econ.png" alt="Econ Bonus">
+  <img id="bio-combo-img" class="bonus-img" src="bio.png" alt="Bio Bonus">
+  <img id="math-combo-img" class="bonus-img" src="math.png" alt="Math Bonus">
+  <img id="phy-combo-img" class="bonus-img" src="phy.png" alt="Physics Bonus">
+  <img id="phe-combo-img" class="bonus-img" src="phe.png" alt="PHE Bonus">
+  <img id="gep-combo-img" class="bonus-img" src="gep.png" alt="GEP Bonus">
+</div>
+
+<script>
+// 1. Browser Checks
+function blockInAppBrowsers() {
+  const ua = navigator.userAgent || navigator.vendor || window.opera;
+  const isInApp = (
+    ua.indexOf("MicroMessenger") > -1 ||
+    ua.indexOf("WhatsApp") > -1 ||
+    ua.indexOf("FBAN") > -1 ||
+    ua.indexOf("FBAV") > -1 ||
+    ua.indexOf("Instagram") > -1 ||
+    ua.indexOf("Line") > -1
+  );
+  if (isInApp) {
+    document.body.innerHTML = `
+      <div style="display: flex; flex-direction: column; justify-content:center; align-items:center; height:100vh; background:#003366; color:white; text-align:center; padding:30px; box-sizing:border-box;">
+        <h2 style="color:#ffd700; margin-bottom:20px;">Action Required<br>請切換瀏覽器</h2>
+        <p style="font-size:18px; line-height:1.6; margin-bottom:30px;">
+          To securely save your stamps, this reward card cannot be used inside WeChat or WhatsApp.<br><br>
+          為了確保您的印花能安全儲存，請勿在微信或 WhatsApp 內使用此卡。
+        </p>
+        <div style="background:white; color:#003366; padding:15px; border-radius:10px; font-weight:bold; font-size:16px;">
+          Tap the menu icon (...) in the top right corner and select:<br><br>
+          "Open in Default Browser" / "Open in Safari / Chrome"<br><br>
+          請點擊右上角的選單按鈕，並選擇「在瀏覽器 / Safari / Chrome 中開啟」
+        </div>
+      </div>`;
+    throw new Error("Execution stopped: In-App Browser.");
+  }
+  const isIOSChrome = ua.indexOf("CriOS") > -1;
+  if (isIOSChrome) {
+    document.body.innerHTML = `
+      <div style="display: flex; flex-direction: column; justify-content:center; align-items:center; height:100vh; background:#003366; color:white; text-align:center; padding:30px; box-sizing:border-box; font-family: 'Helvetica Neue', Arial, sans-serif;">
+        <h2 style="color:#ffd700; margin-bottom:20px;">Please Open in Safari<br>請使用 Safari 開啟</h2>
+        <p style="font-size:16px; line-height:1.6; margin-bottom: 25px; max-width:360px;">
+          For the best camera scanning experience and to keep all your stamps in one place, please open this reward card in <strong>Safari</strong>.<br><br>
+          為確保掃描功能正常及避免印花分散儲存，請使用 iPhone 內置的 <strong>Safari</strong> 瀏覽器開啟此網頁。
+        </p>
+        <button id="copy-url-btn" style="background-color:#28a745; color:white; border:none; padding: 14px 28px; font-size:16px; border-radius: 25px; cursor:pointer; font-weight:bold; width:100%; max-width:280px; margin-bottom:20px;">
+          Copy Link / 複製連結
+        </button>
+        <p style="font-size:14px; color:#e6f2ff;">
+          Then open <strong>Safari</strong> and paste the link.<br>
+          然後開啟 <strong>Safari</strong> 並貼上連結。
+        </p>
+      </div>`;
+    document.getElementById('copy-url-btn').addEventListener('click', function () {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        this.innerText = "Copied! / 已複製!";
+        this.style.backgroundColor = "#ffd700";
+        this.style.color = "#003366";
+      }).catch(() => {
+        alert("Please copy the link from the address bar above.\n請從上方網址列複製連結。");
+      });
+    });
+    throw new Error("Execution stopped: Chrome on iOS.");
+  }
+}
+blockInAppBrowsers();
+
+// 2. Decoy URL Check
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('wrongcam') === 'true') {
+  document.body.innerHTML = `
+    <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; background: #003366; color: white; text-align: center; padding: 25px; box-sizing: border-box; font-family: 'Helvetica Neue', Arial, sans-serif;">
+      <h2 style="color: #ffd700; margin-bottom: 15px; font-size: 22px;">Wrong Camera Used<br>請使用收集卡內的掃描器</h2>
+      <p style="font-size: 16px; line-height: 1.6; margin-bottom: 20px; max-width: 400px;">
+        Please return to your Digital Reward Card, and tap the blue <strong>"Scan 掃描"</strong> button to collect this stamp.<br><br>
+        請返回您的電子印花收集卡，並點擊藍色的 <strong>「Scan 掃描」</strong> 按鈕以收集印花。
+      </p>
+      <button onclick="window.location.href = window.location.pathname;" style="background-color: #28a745; color: white; border: none; padding: 15px 30px; font-size: 16px; border-radius: 25px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin-bottom: 25px; width: 100%; max-width: 300px;">
+        Go to Reward Card<br>前往印花收集卡
+      </button>
+      <div style="background: white; color: #003366; padding: 15px; border-radius: 12px; max-width: 320px;">
+        <p style="font-size: 14px; font-weight: bold; margin: 0 0 10px 0;">Or scan below to reopen:<br>或掃描下方二維碼重新開啟:</p>
+        <img src="launch-qr.png" style="width: 180px; height: auto; border-radius: 8px;" />
+      </div>
+    </div>`;
+  throw new Error("Execution stopped: User scanned with native camera.");
+}
+
+// 3. Storage & Constants
+const STORAGE_KEY = 'ssgc_scanned_stamps_120';
+const COMBO_REDEEMED_KEY = 'ssgc_redeemed_combos_120';
+const MYSTERY_PRIZE_KEY = 'ssgc_mystery_prize_120'; // Saves drawn prize so refresh cannot re-roll
+const TARGET_STAMPS = 28;
+
+// Combo Keys (Keep your exact hashes from Reward Card)
+const arcKeys = ["ddb652c3f89d9a403b78d6967104bb4c7de7a3916c342f6137d80112b3bf1238", "392fd940bbebf09fbba47dddbdb9a5054270178eeb53b9da3279d418ffc88466", "ddc239aad5e47ee52d30311b4fff9f8dd2489e09656b33d71ae3bea7417ac5e4"];
+const chiKeys = ["8b6b8df71ba03d11d41b5c4a997d8ad4097785fbefeb415596a2a9efff26bcef", "c586e017832387cd7f5cfbe2201c4aa14fcb65cc5ab42b1bfa3bd5ea30c26574", "490894755e7cb54f16aff1b0e8d8d6125d26ccc2548f6807589c061305291ade"];
+const histKeys = ["7013c756735b10f464a25e4a80596a7760251f1e7ee1a584c07ae6b3f2c451d7", "01838adbee8012100f47c9651948452169b16831f9d70d7dc1d151b132c5d514", "bdbf28013b9e3d08b180b0985f8a9bea092bc43ff3d226a123202a3ebb0ebad7"];
+const mcneKeys = ["fb93744c59d3974398ad5c25e67e65231d622d95758a76450d27554d04c7a339", "a721eb0f400ef1a757b1e28d8aaac0e71d931f3d17adee60a7ba10af65baedef", "6ba4aac0d5fe3cf5bfac0cfafbd41c6f82da3defdaa8f3311432a02ceba53a97"];
+const engKeys = ["1587f9f47a85ea9eb35f426e0fede601f454329e5f9bd5b0ac4807e696e1660c", "692e613152dd008f50962414a0741bbdc231467e56c9043ba24d981641a27618", "59c954a52fe3ada648365284c8b942d6de6cfcfb1885e946182e4878ffac3299"];
+const musKeys = ["3de8dabf2c216981648f4f5f733e961b1933f08728c40b3a66674677f7746741", "e7de608d226e454f9dde0a17bab07659ea663d951c97a19910faceaf3eb2bb35", "6a8d91c4937a75c84e68e747428f851cb5e12257fe6ac4b33f58e99f5e447c08"];
+const reKeys = ["981236a3102aa5ae96558c9dd9726039fde8e7b14e57335271ab5b4260527854", "e67af63e70f42ad09be8f8be4bc0e1874c47fa4bebc26abbe7ce0acc71f83778", "f439c7a83ee2098ba4b882d47e27e8dca25b012fa1a4cbaf0c316d898aefa25b"];
+const econKeys = ["3e1003f7133c3ec3aa524baeaa8a17d9f6d4420deb595808c68d4d05426d70aa", "b93ca2a181ee70142128993a564e240fd530446ac38496ad8424bdd38ff6e861", "e2ace48292cc1aaa8ff623584684ad9cdfd5b2a2212b6923adfbcee8a3d6b1a2"];
+const bioKeys = ["7697645cf659086a57b149fe70e2b347ca52ae0408dca75f353f15abbef89881", "a3ef9a13e92ece2170e12168394470a213830d900394d2183cb6d00e61308937", "653187af303653e91ca20ea5bd3fa90da0f535f8a1bc3a7ca81faca5a5da3845"];
+const mathKeys = ["deda1effd17389db9bc1cdd3fb48b47807826c5ca2dda0956f441bf9d2b7da3b", "f6b65b100fedb4fb0b5bd983b8447defde2568732008cddc5ccdffaa6448f0b1", "bf033be50ffeceadf41f836118b8648ac76a70d66edd54003c57b8beea8d2b21"];
+const physicsKeys = ["c0def25b5bc5be7898377410dcb99403491b42f22b315fc992174861b4afb438", "cce76ca86a02c122f8a5e8ef364889b7d47ae0b9a4b35db574f1a9584ec632c4", "0cb61623645da98cfb88dc1e4d79e7f2be7020478d068be89953853b60ddea77"];
+const pheKeys = ["84a6489e861351b65cbe0f58db06976f68acb3e8c78ebe06601545a5e3ca44dd", "3c87b4cab1499e9a59248b1df819fff2cc800c9d4ed86db116c4da400dd54ac4", "e52c6e5df2291ac978f9f4e86c8bbc0b495ae86c6108512e64e80c563d115510"];
+const gepKeys = ["0d2ce3e81eaedfaaee0b2c74833e4d91c6a801a8d2583d9e2379c7a9ae4a8b34", "65571009a486ed61cdb42be0a2eb9438498931b5bcd357771acb5bdb5ef4b256", "065af701a820ad4b219f7530d668a232cc6447e0d8d605cdce3e7a477bb6ecb3"];
+
+const combos = [
+  { keys: arcKeys, req: 4, img: 'arc-combo-img' },
+  { keys: chiKeys, req: 4, img: 'chi-combo-img' },
+  { keys: histKeys, req: 2, img: 'hist-combo-img' },
+  { keys: mcneKeys, req: 2, img: 'mcne-combo-img' },
+  { keys: engKeys, req: 4, img: 'eng-combo-img' },
+  { keys: musKeys, req: 4, img: 'mus-combo-img' },
+  { keys: reKeys, req: 4, img: 're-combo-img' },
+  { keys: econKeys, req: 4, img: 'econ-combo-img' },
+  { keys: bioKeys, req: 1, img: 'bio-combo-img' },
+  { keys: mathKeys, req: 2, img: 'math-combo-img' },
+  { keys: physicsKeys, req: 3, img: 'phy-combo-img' },
+  { keys: pheKeys, req: 4, img: 'phe-combo-img' },
+  { keys: gepKeys, req: 4, img: 'gep-combo-img' }
+];
+
+// IMPORTANT: Paste your full stampEmojis object from Reward Card here!
+const stampEmojis = {
+    "ddb652c3f89d9a403b78d6967104bb4c7de7a3916c342f6137d80112b3bf1238": "📜",
+    "392fd940bbebf09fbba47dddbdb9a5054270178eeb53b9da3279d418ffc88466": "🗃️",
+    "ddc239aad5e47ee52d30311b4fff9f8dd2489e09656b33d71ae3bea7417ac5e4": "⏳",
+    "8b6b8df71ba03d11d41b5c4a997d8ad4097785fbefeb415596a2a9efff26bcef": "🥢",
+    "c586e017832387cd7f5cfbe2201c4aa14fcb65cc5ab42b1bfa3bd5ea30c26574": "🧧",
+    "490894755e7cb54f16aff1b0e8d8d6125d26ccc2548f6807589c061305291ade": "🪭",
+    "7013c756735b10f464a25e4a80596a7760251f1e7ee1a584c07ae6b3f2c451d7": "🏛️",
+    "01838adbee8012100f47c9651948452169b16831f9d70d7dc1d151b132c5d514": "⚖️",
+    "bdbf28013b9e3d08b180b0985f8a9bea092bc43ff3d226a123202a3ebb0ebad7": "👸🏻",
+    "fb93744c59d3974398ad5c25e67e65231d622d95758a76450d27554d04c7a339": "🏮",
+    "a721eb0f400ef1a757b1e28d8aaac0e71d931f3d17adee60a7ba10af65baedef": "⛩️",
+    "6ba4aac0d5fe3cf5bfac0cfafbd41c6f82da3defdaa8f3311432a02ceba53a97": "🐼",
+    "79fda5d56573b6af523cddaf29b06b3dc07f40a6c9696580a638bc15cd82885a": "🧭",
+    "562d139f0919ff6cb7318cd315d9cd2e6cf674c5b31c7243aa3c2ea872dd0bca": "🗺️",
+    "80dbb6518650d11654da852624966eefecf31a2721e11cb072b38c81e1033ba7": "🌋",
+    "1587f9f47a85ea9eb35f426e0fede601f454329e5f9bd5b0ac4807e696e1660c": "🔤",
+    "692e613152dd008f50962414a0741bbdc231467e56c9043ba24d981641a27618": "🗣️",
+    "59c954a52fe3ada648365284c8b942d6de6cfcfb1885e946182e4878ffac3299": "🎭",
+    "3de8dabf2c216981648f4f5f733e961b1933f08728c40b3a66674677f7746741": "🎵",
+    "e7de608d226e454f9dde0a17bab07659ea663d951c97a19910faceaf3eb2bb35": "🎻",
+    "6a8d91c4937a75c84e68e747428f851cb5e12257fe6ac4b33f58e99f5e447c08": "🎹",
+    "1c8d4c4b8c4db43a6acbd1a0ba45598eec5d6cbaa69f850840b86a8b2721faed": "🏆",
+    "8a009dc1a309ee5c38f26b19f848665787a3c3d96490b67be104686c81b95d8e": "🎖️",
+    "b98b841339811b5d3eb149bb19fa76529c2da4953fc58ee8b2cf12815c18ebc9": "👏",
+    "9d86ae8efb07cbdcee11071f29511bdbb5764f12140c2aa3714632eebfc4faa7": "📚",
+    "ed245824019664fb77b7a44387549be38dd69f06b66bf78c7b5a4050192bb680": "📖",
+    "2cf26e02b1b21f99f57168373c493856310f119c463b0182208d1b1277b12296": "🧐",
+    "981236a3102aa5ae96558c9dd9726039fde8e7b14e57335271ab5b4260527854": "⛪",
+    "e67af63e70f42ad09be8f8be4bc0e1874c47fa4bebc26abbe7ce0acc71f83778": "✝️",
+    "f439c7a83ee2098ba4b882d47e27e8dca25b012fa1a4cbaf0c316d898aefa25b": "🧔🏻‍♀️",
+    "3e1003f7133c3ec3aa524baeaa8a17d9f6d4420deb595808c68d4d05426d70aa": "📊 ",
+    "b93ca2a181ee70142128993a564e240fd530446ac38496ad8424bdd38ff6e861": "💼 ",
+    "e2ace48292cc1aaa8ff623584684ad9cdfd5b2a2212b6923adfbcee8a3d6b1a2": "💵 ",
+    "7697645cf659086a57b149fe70e2b347ca52ae0408dca75f353f15abbef89881": "🧬",
+    "a3ef9a13e92ece2170e12168394470a213830d900394d2183cb6d00e61308937": "🔬",
+    "653187af303653e91ca20ea5bd3fa90da0f535f8a1bc3a7ca81faca5a5da3845": "🫀",
+    "8d4464515dcc29ae700e972fd540e4787abd2bb331f4ecf011db75d7888e8b01": "🧪",
+    "25b6b2c60f5970075a087ed2ce4b50aa1fd37f4e0e6d07554c91583e691d1a48": "🥼",
+    "357a9e2bb61534b6a4d9d4014092649f199e4ff30f1d1ad0023e3578ad8da635": "🥽",
+    "af2778d856d2a3b43bdd7f41055d39abd2512d0a3a5b5453693925edfe605395": "💻",
+    "8cb0fb1e4950e1da814a5f284a660aa8755ac5d09ae57abe332db5b5fbaf17ef": "💾",
+    "3c3e3162d2dfb1d5957109cf78df2a504358b3851dcdf6630a1dcba8f59ba281": "👨🏻‍💻",
+    "deda1effd17389db9bc1cdd3fb48b47807826c5ca2dda0956f441bf9d2b7da3b": "🧮",
+    "f6b65b100fedb4fb0b5bd983b8447defde2568732008cddc5ccdffaa6448f0b1": "📐",
+    "bf033be50ffeceadf41f836118b8648ac76a70d66edd54003c57b8beea8d2b21": "📱",
+    "c0def25b5bc5be7898377410dcb99403491b42f22b315fc992174861b4afb438": "🪀",
+    "cce76ca86a02c122f8a5e8ef364889b7d47ae0b9a4b35db574f1a9584ec632c4": "🧲",
+    "0cb61623645da98cfb88dc1e4d79e7f2be7020478d068be89953853b60ddea77": "⚛️",
+    "845107bb3c852118716990a9c44764c3aa94c0b1fc93228de857f151e95839a1": "🚀",
+    "120f76826b1260b06f3171a582bb7265d326ad628689273072ed0fd73e18b6f6": "🤖",
+    "eb318ce7167f273a1df1f22046ec6eb5a2d727a3654ceb34d0d3e5cbcaf36699": "👩🏻‍🔧",
+    "8970fcf61e86f3a12d91db4d603b239c355a5e69cb8dcf1633ae880214c2e5ef": "🛍️",
+    "0c5f4e7dfe3df0d977e3dd60f662ccb068c2ccfee28acee91b6d28e6e1302702": "🛒",
+    "80ba90b0319abf5508b5c1b15d9f9b08e6ce11e2bab5c6605a1273ec0ea1bc50": "🎒",
+    "1ac075ccf6c7a90aa74bd0dab8f82caf7e3dedadfc0060f202193e6615bfec4e": "💬",
+    "c1e8bb11131138e3669a394bb00a8b72f733eeab85ae6a8218419cef8845c41a": "✍",
+    "d40b8ad7f00858257dcdc98a1f496781dc8cf8e483c630e688ed8d454fd2a1a7": "📌",
+    "45416807e983a44031de273b8db725980e82072804b4165be3e48d8dd7c27935": "🎓",
+    "58c9d0b8ac0b3de450eb6c476c05ce3429345e182962f3259b2263f9a9ec7532": "🫰🏻",
+    "4563d92a5c0e23b8a342c4cad7e19dfb4a33539d7889687821ec2eeb374a4420": "🫂",
+    "84a6489e861351b65cbe0f58db06976f68acb3e8c78ebe06601545a5e3ca44dd": "🏊🏻‍♀️",
+    "3c87b4cab1499e9a59248b1df819fff2cc800c9d4ed86db116c4da400dd54ac4": "🚴🏻‍♀️",
+    "e52c6e5df2291ac978f9f4e86c8bbc0b495ae86c6108512e64e80c563d115510": "🤾🏻‍♀️",
+    "05b66864d35b712eaf7fb03cdf16941cf29af365c6ea495278b831822c000535": "✉️",
+    "f3dac414f188275c58b371a5853416eb11303a855c13dff581135f112d09ab5a": "👨‍👩‍👧",
+    "f47b6a9c6a43a0754ce131a6c4a8a9a6b01d362f49a150ac6be944ffd1c7e0b6": "📰",
+    "517e9681538074c8455b77411eec63371eac424eef128974c9aea74ae314a998": "🫶🏻",
+    "5f1062fb6d067490fb506a68d4808b5f46808023954a349a7486709f6b69f99a": "🤝🏻",
+    "b9cdff90222f93d5d87959cb79b3bfb8e7ab8466b1a411842b044f8750e5c0ab": "🙋🏻‍♀️",
+    "6f504be5c78be7e611bd3ee0fd591549ace8c9abd7d6ce9969e0018b064c2c11": "🎨",
+    "82879225e9c5af41525fca390d1570a3153fec7ceaf8fbb78dab9c5fe614c298": "🖌️",
+    "80c720488109020a32e9b9fc3c4de8719d689bd92e27bf3f6d1704fb1c2c95d2": "👩🏻‍🎨",
+    "0d2ce3e81eaedfaaee0b2c74833e4d91c6a801a8d2583d9e2379c7a9ae4a8b34": "✈️",
+    "65571009a486ed61cdb42be0a2eb9438498931b5bcd357771acb5bdb5ef4b256": "🛫",
+    "065af701a820ad4b219f7530d668a232cc6447e0d8d605cdce3e7a477bb6ecb3": "🌐",
+    "ddc5146b5630ed24ff75093da3d395bb9d41c7eeb00e6d1377adfe8ca0c31bd1": "🧗‍♀️",
+    "d8ec152e1b1c18b90ee0a438b9ddf99a3df6998d6db027fc437c1c085e2cad7c": "💃",
+    "43a027d206c941a1df07c1a57c0556ae3f7070bb915fdb0c5d34cf173e902e48": "🏄🏻‍♀️",
+    "886cb343def090eef1847983a3858a32f2430383e8e67f6d22db9e81bba57105": "🌴",
+    "ad3e274e20720d18fb5a0e58102e7bb4b34fd25bc0e26e5cd7f403497c73b135": "♻️",
+    "39d5b67ef9ec3edb53ff048b252cd1ffeca15d0ebdf7adb5a2eb0c4dd0f981c2": "💚",
+    "acd681244414b7fc2aff7000a90dd6c8ccad0a1423b287063cb910dca4dc90c0": "🪡 ",
+    "6bca7f113b8aec0288cfa552f06e21a0ac4dfcde7d6d34240dbe1549892d6b9e": "🧵 ",
+    "949ca9a5d6ffa42bcb745a69c103d3e67cf840374641be04c2e5977483d4bac4": "🍳 ",
+    "398880d47ef5327524aa45a930862987e7c0a2f21589b85dd388dd551769651b": "👍",
+    "c0552f1a208fac31a99b64a6a767d3002f92336e133f2454b1e9fc8a9ac7a67b": "🎟️",
+    "1214911df5641e263ae28e837147d229a1a415674d9cb6a49e4097e3635787a5": "🎉",
+    "fd9b3a3984967c7b26232b3f6fd464374af684bb9736cfa5a389c67eb5dc02ae": "🎊",
+    "b4ce85284e8c716c32710d586937899416fe2b8e115516df7a6d3cd725cb2b58": "🥳",
+    "b770e7804599174b2f818f379505a2c4eb40bf7c153b00f4aa52b4b67fa76154": "🤩",
+    "9a8774c0f6d18de51c2c6a76b2d2d796e1b8cce2c73136c15d21072b55be99c1": "🥂",
+    "0e722f0eb8e5be94d32ed5f4549d8c28a5b96723c050b41c6926f95c3c12d1c1": "🌷",
+    "9749586782e7a79700228bc380b7301ca4545ad6984ef951b05f147d5f28bb08": "🎁",
+    "b71d2648a00a931e959f679f54f384c2797e5c5a08c6238f0f5d7183547bbc09": "🎀",
+    "48e4f45eeb39942e60644ab61514f3ce07fc5acf1161737a1060e0f548b34e25": "🌼",
+    "e7ae934785099725fd512e2fba7f8c8aea149f3a0a18d57f9bfde04c1eb8733c": "🍾",
+    "e52c3697a105fb3d37392f0f68590baaecaa47bae109cb0caabe98b9bffdb09e": "🌹",
+    "c1cdf20d47879d645f22aa8e5fc6b038c0abce39d8e1531f7987d31001a4d034": "🍷",
+    "1382f7e9475deb68ffe42fe3e68ca1a7c19fa6390ad200afa7141c671ecda00c": "🦄",
+    "18dfa2912aec9c886789e4f6cc294dc37fae30fb7741122add0074b235437e2e": "✨",
+    "d517b1772251e4cba25adb3ea867c3b95c0fb7b914b8b430fd1fc84051ebfc8d": "🔔",
+    "744a887f97fb94a556ee2ff6485043f0f2556d3df5e4f254cfeb320af7a01c14": "💎",
+    "f9b4e998c87fbcd5c45078d2e4a5be30fad81131c6ec4723cb7960762e20f026": "💌",
+    "90015dde285fe2e0ae5a82779f780ffcfb2de9446f4c94c2dcdb3e77af78503a": "🎈",
+    "c71874912f549641ec1895cbec18afd571e26fba9d3ca4c0d194c607c3c85460": "👩🏻‍🏫",
+    "19d036c1e09eb9bb8bf93e72b034eddaa1a28a26e67cee84abf2835e5f5b3355": "🧑🏻‍🏫",
+    "d6ac39c9c8b7a690661bd4a81c50caf856f7501bab22aed8a4967fc063540b8b": "👨🏻‍🏫",
+    "0e4183868db719c826f20d2d69673fd91b8c2852c72423fb8d3c00de9ac065f8": "🖇️",
+    "53f3812dce815e946a1b14d9d7f312d8899f6c30749dfa1d508073b12f91bd8d": "👩🏻‍🎓",
+    "a1d9ec0722a79a5512b081036f6cf496e080ec504457a0aff3e068c55d63adcf": "🧑🏻‍🎓",
+    "3023ec8489431bff34ee9d257121707e92fbb5d9dd70ab501761f30e03031740": "🖋️",
+    "9bc739faef306a778c80bcbb5e19e88df8f4cffc760cbd43191dd29efb788687": "🖊️",
+    "d191c323eabd7dc6c54983263cb4889d25405f62046fc54464e07311a1c23a0b": "🪶",
+    "91d54d77ba0d77197fc0e5464b05b42b5d5dc1b6bc41d4b46839e4ac46415989": "📋",
+    "17bba25ee10f3ff2a5146bf8cfc2e4f53ae4df4b9e01ffa1c2a9c1596b906fb6": "🖍️",
+    "189e06531cc43b8dd5167f394856b81af17dcc79800485809bc9004dce534bb1": "⌛",
+    "066034c31e39d564148cbc42b5e125766b2a2c5cff451df0d50c635246735129": "✌️",
+    "ec8fdce9dec12a3bd85e2c4a5da1f3e9ee3f15cf52ab2f1498030f9343b8f95e": "😍",
+    "6f28cc6f5c19b61f7e41089d9e3223c514f44b479c4fec2e2b15b43eee0c3257": "🔋",
+    "927b3c6808ba881be9e9116080486b63d62edfff71e5b97e974ace72e758cbd3": "🌈",
+  // ... paste your original stampEmojis hash-to-emoji pairs here ...
+};
+
+// 4. Mystery Box Logic & Audio
+const prizes = [
+  { image: "IDcover.png", weight: 20 },
+  { image: "Magnet.png", weight: 20 },
+  { image: "Wclip.png", weight: 20 },
+  { image: "Sclip.png", weight: 20 },
+  { image: "CSBookmark.png", weight: 20 },
+  { image: "Maths.png", weight: 0 },
+  { image: "Physics.png", weight: 0 }
+];
+prizes.forEach(prize => { const img = new Image(); img.src = prize.image; });
+
+let isDrawing = false;
+let audioCtx;
+const box = document.getElementById('blindBox');
+const mysteryResultDiv = document.getElementById('mystery-result');
+const mysterySubtitle = document.getElementById('mystery-subtitle');
+const prizePopup = document.getElementById('prizePopup');
+const popupImg = document.getElementById('popupImg');
+const mysteryRedeemBtn = document.getElementById('mystery-redeem-btn');
+
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playShakeSound() {
+  initAudio();
+  for (let i = 0; i < 12; i++) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = 'square';
+    osc.frequency.value = 80 + (Math.random() * 40);
+    const startTime = audioCtx.currentTime + (i * 0.1);
+    gain.gain.setValueAtTime(0.05, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.08);
+    osc.start(startTime);
+    osc.stop(startTime + 0.1);
+  }
+}
+
+function playWinSound() {
+  initAudio();
+  const notes = [261.63, 329.63, 392.00, 523.25];
+  const now = audioCtx.currentTime;
+  notes.forEach((freq, i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    const startTime = now + (i * 0.1);
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(0.2, startTime + 0.05);
+    const duration = (i === notes.length - 1) ? 1.5 : 0.2;
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+    osc.start(startTime);
+    osc.stop(startTime + duration);
+  });
+}
+
+function drawPrize() {
+  const totalWeight = prizes.reduce((sum, prize) => sum + prize.weight, 0);
+  let randomNum = Math.random() * totalWeight;
+  for (let prize of prizes) {
+    if (randomNum < prize.weight) return prize;
+    randomNum -= prize.weight;
+  }
+  return prizes[prizes.length - 1];
+}
+
+function openBox() {
+  // Prevent shaking again if currently shaking OR if a prize was already drawn
+  const savedPrize = localStorage.getItem(MYSTERY_PRIZE_KEY);
+  if (isDrawing || savedPrize) return;
+
+  isDrawing = true;
+  mysteryResultDiv.style.color = "#2b6cb0";
+  mysteryResultDiv.innerHTML = "驚喜準備中... Surprise in Preparation...";
+  box.classList.remove('shaking');
+  void box.offsetWidth;
+  box.classList.add('shaking');
+
+  try { playShakeSound(); } catch (e) { console.log(e); }
+
+  const wonPrize = drawPrize();
+  popupImg.src = wonPrize.image;
+
+  setTimeout(() => {
+    box.classList.remove('shaking');
+    // Save prize immediately so user can only shake ONCE
+    localStorage.setItem(MYSTERY_PRIZE_KEY, wonPrize.image);
+    showMysteryResult(wonPrize.image, true);
+    isDrawing = false;
+    updateUI();
+  }, 1200);
+}
+
+function showMysteryResult(prizeImage, playEffects) {
+  if (playEffects) {
+    try { playWinSound(); } catch (e) { console.log(e); }
+    confetti({
+      particleCount: 150,
+      spread: 80,
+      origin: { y: 0.6 },
+      colors: ['#1a365d', '#2b6cb0', '#f6ad55', '#e2e8f0']
+    });
+  }
+  popupImg.src = prizeImage;
+  prizePopup.classList.add('active');
+  mysterySubtitle.innerHTML = "請向 M009 / M010 室工作人員出示此畫面<br>Show this screen to staff in Rooms M009 / M010";
+  mysteryResultDiv.style.color = "#e53e3e";
+  mysteryResultDiv.innerHTML = "恭喜您 Congratulations!";
+  mysteryRedeemBtn.style.display = "block";
+  document.getElementById('boxContainer').style.cursor = "default";
+}
+
+function resetMysteryBoxUI() {
+  prizePopup.classList.remove('active');
+  popupImg.src = "";
+  mysteryResultDiv.innerHTML = "";
+  mysterySubtitle.innerHTML = "點擊盲盒開啟 (限抽一次)<br>Tap the box to open (One-time draw only)";
+  mysteryRedeemBtn.style.display = "none";
+  document.getElementById('boxContainer').style.cursor = "pointer";
+}
+
+// 5. Reward Card Core Logic
+const congratsBanner = document.getElementById('congrats-banner');
+const mainActionBtn = document.getElementById('main-action-btn');
+const progressText = document.getElementById('progress-text');
+const mysteryModal = document.getElementById('mystery-modal');
+const confirmModal = document.getElementById('confirm-modal');
+const comboModal = document.getElementById('combo-modal');
+let currentRedeemingComboId = null;
+
+function triggerCelebration() {
+  confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#ffd700', '#003366', '#ffffff'] });
+}
+
+function getCollectedStamps() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch (e) { return []; }
+}
+function saveCollectedStamps(stampsArray) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(stampsArray));
+}
+function getRedeemedCombos() {
+  try { return JSON.parse(localStorage.getItem(COMBO_REDEEMED_KEY)) || []; } catch (e) { return []; }
+}
+function saveRedeemedCombos(redeemedArray) {
+  localStorage.setItem(COMBO_REDEEMED_KEY, JSON.stringify(redeemedArray));
+}
+
+function checkSpeedLimit() {
+  const lastScanTime = localStorage.getItem('ssgc_last_scan_time');
+  const now = Date.now();
+  if (lastScanTime && (now - parseInt(lastScanTime)) < 2000) { return false; }
+  localStorage.setItem('ssgc_last_scan_time', now.toString());
+  return true;
+}
+
+function checkComboStatus(stamps, keys, requiredCount) {
+  let count = 0;
+  for (let i = 0; i < stamps.length; i++) {
+    if (keys.includes(stamps[i])) count++;
+  }
+  return count >= requiredCount;
+}
+
+function getUnlockIndex(keys, requiredCount, collectedStamps) {
+  let count = 0;
+  for (let i = 0; i < collectedStamps.length; i++) {
+    if (keys.includes(collectedStamps[i])) {
+      count++;
+      if (count === requiredCount) return i;
+    }
+  }
+  return -1;
+}
+
+function updateUI() {
+  const collectedStamps = getCollectedStamps();
+  const count = collectedStamps.length;
+  const savedPrize = localStorage.getItem(MYSTERY_PRIZE_KEY);
+
+  const emptyBoxes = document.querySelectorAll('.stamp-box.empty');
+  emptyBoxes.forEach((box, index) => {
+    if (index < count) {
+      box.classList.add('unlocked');
+      const stampId = collectedStamps[index];
+      box.innerText = stampEmojis[stampId] || "★";
+    } else {
+      box.classList.remove('unlocked');
+      box.innerText = "";
+    }
+  });
+
+  progressText.innerText = `Stamps Collected 印花進度: ${Math.min(count, TARGET_STAMPS)} / ${TARGET_STAMPS}`;
+
+  if (count >= TARGET_STAMPS) {
+    congratsBanner.style.display = 'block';
+    mainActionBtn.disabled = false;
+
+    if (!savedPrize) {
+      // 28 stamps reached, Mystery Box NOT opened yet
+      mainActionBtn.innerText = "Fortune Mystery Box 幸運盲盒";
+      mainActionBtn.classList.add('mystery-ready');
+      resetMysteryBoxUI();
+    } else {
+      // Mystery Box ALREADY shaken/opened -> Show Redeem button
+      mainActionBtn.innerText = "Redeem 兌換 (查看獎品)";
+      mainActionBtn.classList.remove('mystery-ready');
+      showMysteryResult(savedPrize, false);
+    }
+  } else {
+    congratsBanner.style.display = 'none';
+    mainActionBtn.disabled = true;
+    mainActionBtn.innerText = "Redeem 兌換";
+    mainActionBtn.classList.remove('mystery-ready');
+    resetMysteryBoxUI();
+  }
+
+  const redeemedCombos = getRedeemedCombos();
+  combos.forEach(c => {
+    const unlockIndex = getUnlockIndex(c.keys, c.req, collectedStamps);
+    const img = document.getElementById(c.img);
+    if (img) {
+      img.style.display = (unlockIndex !== -1 && !redeemedCombos.includes(c.img)) ? 'block' : 'none';
+      img.style.order = unlockIndex;
+    }
+  });
+}
+
+window.addEventListener('storage', function (event) {
+  if (event.key === STORAGE_KEY || event.key === COMBO_REDEEMED_KEY || event.key === MYSTERY_PRIZE_KEY) {
+    updateUI();
+  }
+});
+
+function processStamp(rawStampText, isFromUrl = false) {
+  if (!rawStampText) return;
+  let stampId = rawStampText.trim();
+
+  if (stampId.startsWith('http') && stampId.includes('stamp=')) {
+    try {
+      const url = new URL(stampId);
+      stampId = url.searchParams.get('stamp');
+    } catch (e) {
+      console.error("Could not extract stamp from URL");
+    }
+  }
+
+  if (stampId.length !== 64) {
+    stampId = CryptoJS.SHA256(stampId).toString();
+  }
+
+  if (stampEmojis.hasOwnProperty(stampId)) {
+    let collectedStamps = getCollectedStamps();
+    if (collectedStamps.includes(stampId)) {
+      if (!isFromUrl) alert("You have already collected this stamp!\n\n您已收集過此印花！");
+      return;
+    }
+    if (collectedStamps.length < TARGET_STAMPS) {
+      if (!checkSpeedLimit()) {
+        alert("You are scanning too fast! Please wait a moment before scanning again.\n\n您掃描得太快了！請稍等片刻再掃描。");
+      } else {
+        const previousStatus = combos.map(c => checkComboStatus(collectedStamps, c.keys, c.req));
+        collectedStamps.push(stampId);
+        saveCollectedStamps(collectedStamps);
+
+        let shouldCelebrate = false;
+        combos.forEach((c, index) => {
+          const isDoneNow = checkComboStatus(collectedStamps, c.keys, c.req);
+          if (!previousStatus[index] && isDoneNow) shouldCelebrate = true;
+        });
+        if (collectedStamps.length === TARGET_STAMPS) shouldCelebrate = true;
+        if (shouldCelebrate) setTimeout(triggerCelebration, 300);
+
+        updateUI();
+      }
+    }
+  } else {
+    alert("Invalid QR Code.\n\n無效的二維碼。");
+  }
+}
+
+// 6. QR Scanner Setup
+let html5QrcodeScanner = null;
+function stopScanner() {
+  if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
+    html5QrcodeScanner.stop().then(() => {
+      html5QrcodeScanner.clear();
+      document.getElementById('scanner-modal').style.display = 'none';
+    }).catch(() => {
+      document.getElementById('scanner-modal').style.display = 'none';
+    });
+  } else {
+    document.getElementById('scanner-modal').style.display = 'none';
+  }
+}
+
+function onScanSuccess(decodedText) {
+  stopScanner();
+  let stampId = decodedText;
+  try {
+    const url = new URL(decodedText);
+    if (url.searchParams.get('stamp')) stampId = url.searchParams.get('stamp');
+  } catch (e) {}
+  processStamp(stampId);
+}
+
+document.getElementById('start-scan-btn').addEventListener('click', async () => {
+  document.getElementById('scanner-modal').style.display = 'flex';
+  if (!html5QrcodeScanner) html5QrcodeScanner = new Html5Qrcode("reader");
+  const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+  try {
+    await html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {});
+  } catch (err) {
+    try {
+      const devices = await Html5Qrcode.getCameras();
+      if (devices && devices.length > 0) {
+        const cameraId = devices[devices.length - 1].id;
+        await html5QrcodeScanner.start(cameraId, config, onScanSuccess, () => {});
+      } else {
+        throw new Error("No camera found.");
+      }
+    } catch (fallbackErr) {
+      document.getElementById('scanner-modal').style.display = 'none';
+      alert("Camera could not be opened.\nPlease allow camera permission in your phone settings, or open this page in Safari.\n\n無法開啟相機。\n請在手機設定中允許瀏覽器使用相機權限，或改用 Safari 開啟此網頁。");
+    }
+  }
+});
+document.getElementById('close-scanner').addEventListener('click', stopScanner);
+
+// 7. Button & Modal Event Listeners
+mainActionBtn.addEventListener('click', () => {
+  // Opens the Mystery Box modal (either to shake it for the first time, or to view the drawn prize & redeem)
+  mysteryModal.style.display = 'flex';
+});
+
+document.getElementById('close-mystery-btn').addEventListener('click', () => {
+  if (!isDrawing) mysteryModal.style.display = 'none';
+});
+
+// Clicking "Redeem" inside the Mystery Box modal opens the M009/M010 staff confirmation modal
+mysteryRedeemBtn.addEventListener('click', () => {
+  mysteryModal.style.display = 'none';
+  confirmModal.style.display = 'flex';
+});
+
+document.getElementById('modal-cancel').addEventListener('click', () => {
+  confirmModal.style.display = 'none';
+});
+
+document.getElementById('modal-confirm').addEventListener('click', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(COMBO_REDEEMED_KEY);
+  localStorage.removeItem(MYSTERY_PRIZE_KEY); // Clears the saved mystery prize on reset
+  confirmModal.style.display = 'none';
+  updateUI();
+});
+
+// Combo Redemption Listeners
+document.querySelectorAll('.bonus-img').forEach(img => {
+  img.addEventListener('click', function() {
+    currentRedeemingComboId = this.id;
+    comboModal.style.display = 'flex';
+  });
+});
+
+document.getElementById('combo-cancel').addEventListener('click', () => {
+  comboModal.style.display = 'none';
+  currentRedeemingComboId = null;
+});
+
+document.getElementById('combo-confirm').addEventListener('click', () => {
+  if (currentRedeemingComboId) {
+    const redeemed = getRedeemedCombos();
+    if (!redeemed.includes(currentRedeemingComboId)) {
+      redeemed.push(currentRedeemingComboId);
+      saveRedeemedCombos(redeemed);
+    }
+    comboModal.style.display = 'none';
+    currentRedeemingComboId = null;
+    updateUI();
+  }
+});
+
+// Initial UI Render
+updateUI();
+</script>
+</body>
+</html>
