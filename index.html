@@ -339,7 +339,7 @@
   請使用此按鈕掃描，切勿使用手機相機。
 </p>
 
-<button id="start-scan-btn" class="action-btn" style="background-color: #0056b3; margin: 5px 0 10px 0; width: 100%; max-width: 300px;">
+<button id="start-scan-btn" class="action-btn" style="margin: 5px 0 10px 0; width: 100%; max-width: 300px;">
   Scan 掃描
 </button>
 
@@ -837,6 +837,7 @@ function resetMysteryBoxUI() {
 // 5. Reward Card Core Logic
 const congratsBanner = document.getElementById('congrats-banner');
 const mainActionBtn = document.getElementById('main-action-btn');
+const startScanBtn = document.getElementById('start-scan-btn');
 const progressText = document.getElementById('progress-text');
 const mysteryModal = document.getElementById('mystery-modal');
 const confirmModal = document.getElementById('confirm-modal');
@@ -906,9 +907,13 @@ function updateUI() {
 
   progressText.innerText = `Stamps Collected 印花進度: ${Math.min(count, TARGET_STAMPS)} / ${TARGET_STAMPS}`;
 
-  if (count >= TARGET_STAMPS) {
+if (count >= TARGET_STAMPS) {
     congratsBanner.style.display = 'block';
     mainActionBtn.disabled = false;
+
+    // Dim and disable Scan button
+    startScanBtn.disabled = true;
+    startScanBtn.style.backgroundColor = '';
 
     if (!savedPrize) {
       // 28 stamps reached, Mystery Box NOT opened yet
@@ -926,6 +931,11 @@ function updateUI() {
     mainActionBtn.disabled = true;
     mainActionBtn.innerText = "Redeem 兌換";
     mainActionBtn.classList.remove('mystery-ready');
+
+    // Re-enable and restore blue color on Scan button
+    startScanBtn.disabled = false;
+    startScanBtn.style.backgroundColor = '#0056b3';
+
     resetMysteryBoxUI();
   }
 
