@@ -569,13 +569,13 @@ const gepKeys = ["0d2ce3e81eaedfaaee0b2c74833e4d91c6a801a8d2583d9e2379c7a9ae4a8b
 const combos = [
   { keys: arcKeys, req: 4, img: 'arc-combo-img' },
   { keys: chiKeys, req: 4, img: 'chi-combo-img' },
-  { keys: histKeys, req: 2, img: 'hist-combo-img' },
-  { keys: mcneKeys, req: 2, img: 'mcne-combo-img' },
+  { keys: histKeys, req: 4, img: 'hist-combo-img' },
+  { keys: mcneKeys, req: 4, img: 'mcne-combo-img' },
   { keys: engKeys, req: 4, img: 'eng-combo-img' },
   { keys: musKeys, req: 4, img: 'mus-combo-img' },
   { keys: reKeys, req: 4, img: 're-combo-img' },
   { keys: econKeys, req: 4, img: 'econ-combo-img' },
-  { keys: bioKeys, req: 1, img: 'bio-combo-img' },
+  { keys: bioKeys, req: 4, img: 'bio-combo-img' },
   { keys: mathKeys, req: 2, img: 'math-combo-img' },
   { keys: physicsKeys, req: 3, img: 'phy-combo-img' },
   { keys: pheKeys, req: 4, img: 'phe-combo-img' },
@@ -709,11 +709,11 @@ const stampEmojis = {
 
 // 4. Mystery Box Logic & Audio
 const prizes = [
-  { image: "IDcover.png", weight: 0 },
-  { image: "Magnet.png", weight: 0 },
-  { image: "Wclip.png", weight: 0 },
-  { image: "Sclip.png", weight: 0 },
-  { image: "CSBookmark.png", weight: 100 },
+  { image: "IDcover.png", weight: 50 },
+  { image: "Magnet.png", weight: 15 },
+  { image: "Wclip.png", weight: 15 },
+  { image: "Sclip.png", weight: 15 },
+  { image: "CSBookmark.png", weight: 5 },
 ];
 prizes.forEach(prize => { const img = new Image(); img.src = prize.image; });
 
